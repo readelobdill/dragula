@@ -42,13 +42,14 @@ function dragula (initialContainers, options) {
 
   var drake = emitter({
     containers: o.containers,
-    start: manualStart,
+    start: o.enableMultiple ? startMultiple : manualStart,
     end: end,
     cancel: cancel,
     remove: remove,
     destroy: destroy,
     canMove: canMove,
-    dragging: false
+    dragging: false,
+    items: []
   });
 
   if (o.removeOnSpill === true) {
@@ -140,13 +141,22 @@ function dragula (initialContainers, options) {
     eventualMovements(true);
     movements();
     end();
-    start(grabbed);
+    if (drake.items.length) {
+      startMultiple();
+      for (let item of drake.items) {
+          classes.add(item, 'gu-transit');
+      }
+    } else {
+      start(grabbed);
+      classes.add(_copy || _item, 'gu-transit');
+    }
+
 
     var offset = getOffset(_item);
     _offsetX = getCoord('pageX', e) - offset.left;
     _offsetY = getCoord('pageY', e) - offset.top;
 
-    classes.add(_copy || _item, 'gu-transit');
+
     renderMirrorImage();
     drag(e);
   }
@@ -189,6 +199,12 @@ function dragula (initialContainers, options) {
 
   function canMove (item) {
     return !!canStart(item);
+  }
+
+  function startMultiple () {
+    for (let item of drake.items) {
+      manualStart(item);
+    }
   }
 
   function manualStart (item) {
@@ -258,7 +274,7 @@ function dragula (initialContainers, options) {
     if (isInitialPlacement(target)) {
       drake.emit('cancel', item, _source, _source);
     } else {
-      drake.emit('drop', item, target, _source, _currentSibling);
+      drake.emit('drop', drake.items.length ? drake.items : [item], target, _source, _currentSibling);
     }
     cleanup();
   }
@@ -296,7 +312,7 @@ function dragula (initialContainers, options) {
     if (initial || reverts) {
       drake.emit('cancel', item, _source, _source);
     } else {
-      drake.emit('drop', item, parent, _source, _currentSibling);
+      drake.emit('drop', drake.items.length ? drake.items : [item], parent, _source, _currentSibling);
     }
     cleanup();
   }
@@ -305,8 +321,8 @@ function dragula (initialContainers, options) {
     var item = _copy || _item;
     ungrab();
     removeMirrorImage();
-    if (item) {
-      classes.rm(item, 'gu-transit');
+    for (let thing of drake.items.length ? drake.items : [item]) {
+      classes.rm(thing, 'gu-transit');
     }
     if (_renderTimer) {
       clearTimeout(_renderTimer);
@@ -403,7 +419,10 @@ function dragula (initialContainers, options) {
       reference !== nextEl(item)
     ) {
       _currentSibling = reference;
-      dropTarget.insertBefore(item, reference);
+      for (let thing of drake.items.length ? drake.items.slice().reverse() : [item]) {
+        dropTarget.insertBefore(thing, reference);
+        reference = thing;
+      }
       drake.emit('shadow', item, dropTarget, _source);
     }
     function moved (type) { drake.emit(type, item, _lastDropTarget, _source); }
@@ -423,16 +442,21 @@ function dragula (initialContainers, options) {
     if (_mirror) {
       return;
     }
-    var rect = _item.getBoundingClientRect();
-    _mirror = _item.cloneNode(true);
-    _mirror.style.width = getRectWidth(rect) + 'px';
-    _mirror.style.height = getRectHeight(rect) + 'px';
-    classes.rm(_mirror, 'gu-transit');
+
+    _mirror = document.createElement("div"); 
     classes.add(_mirror, 'gu-mirror');
+    for (var item of drake.items.length ? drake.items : [_item]) {
+      var rect = item.getBoundingClientRect();
+      var clone = item.cloneNode(true);
+      clone.style.width = getRectWidth(rect) + 'px';
+      clone.style.height = getRectHeight(rect) + 'px';
+      classes.rm(clone, 'gu-transit');
+      _mirror.appendChild(clone);
+    }
     o.mirrorContainer.appendChild(_mirror);
     touchy(documentElement, 'add', 'mousemove', drag);
     classes.add(o.mirrorContainer, 'gu-unselectable');
-    drake.emit('cloned', _mirror, _item, 'mirror');
+    drake.emit('cloned', _mirror, _item || _items, 'mirror');
   }
 
   function removeMirrorImage () {
