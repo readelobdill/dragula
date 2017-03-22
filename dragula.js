@@ -143,9 +143,9 @@ function dragula (initialContainers, options) {
     end();
     if (drake.items.length) {
       startMultiple();
-      for (let item of drake.items) {
-          classes.add(item, 'gu-transit');
-      }
+      drake.items.forEach(function(item){
+          classes.add(item, 'gu-transit');        
+      });
     } else {
       start(grabbed);
       classes.add(_copy || _item, 'gu-transit');
@@ -202,9 +202,9 @@ function dragula (initialContainers, options) {
   }
 
   function startMultiple () {
-    for (let item of drake.items) {
+    drake.items.forEach(function(item){
       manualStart(item);
-    }
+    });
   }
 
   function manualStart (item) {
@@ -321,9 +321,10 @@ function dragula (initialContainers, options) {
     var item = _copy || _item;
     ungrab();
     removeMirrorImage();
-    for (let thing of drake.items.length ? drake.items : [item]) {
+    var items = drake.items.length ? drake.items : [item];
+    items.forEach(function(thing){
       classes.rm(thing, 'gu-transit');
-    }
+    });
     if (_renderTimer) {
       clearTimeout(_renderTimer);
     }
@@ -419,10 +420,11 @@ function dragula (initialContainers, options) {
       reference !== nextEl(item)
     ) {
       _currentSibling = reference;
-      for (let thing of drake.items.length ? drake.items.slice().reverse() : [item]) {
+      var items = drake.items.length ? drake.items.slice().reverse() : [item];
+      items.forEach(function(thing){
         dropTarget.insertBefore(thing, reference);
         reference = thing;
-      }
+      })
       drake.emit('shadow', item, dropTarget, _source);
     }
     function moved (type) { drake.emit(type, item, _lastDropTarget, _source); }
@@ -445,14 +447,15 @@ function dragula (initialContainers, options) {
 
     _mirror = document.createElement("div"); 
     classes.add(_mirror, 'gu-mirror');
-    for (var item of drake.items.length ? drake.items : [_item]) {
+    var items = drake.items.length ? drake.items : [item];
+    items.forEach(function(item){
       var rect = item.getBoundingClientRect();
       var clone = item.cloneNode(true);
       clone.style.width = getRectWidth(rect) + 'px';
       clone.style.height = getRectHeight(rect) + 'px';
       classes.rm(clone, 'gu-transit');
       _mirror.appendChild(clone);
-    }
+    });
     o.mirrorContainer.appendChild(_mirror);
     touchy(documentElement, 'add', 'mousemove', drag);
     classes.add(o.mirrorContainer, 'gu-unselectable');
