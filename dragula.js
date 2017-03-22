@@ -447,7 +447,7 @@ function dragula (initialContainers, options) {
 
     _mirror = document.createElement("div"); 
     classes.add(_mirror, 'gu-mirror');
-    var items = drake.items.length ? drake.items : [item];
+    var items = drake.items.length ? drake.items : [_item];
     items.forEach(function(item){
       var rect = item.getBoundingClientRect();
       var clone = item.cloneNode(true);
